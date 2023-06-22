@@ -1,0 +1,68 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create an Aurora Serverless PostgreSQL database",
+  "Parameters": {
+    "DBUsername": {
+      "Type": "String",
+      "Description": "Enter the username for the database"
+    },
+    "DBPassword": {
+      "Type": "String",
+      "Description": "Enter the password for the database"
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "Select the VPC for the Aurora database"
+    },
+    "SubnetIds": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Select the subnets for the Aurora database"
+    },
+    "SecurityGroupName": {
+      "Type": "String",
+      "Description": "Enter the name for the Aurora security group"
+    }
+  },
+  "Resources": {
+    "AuroraCluster": {
+      "Type": "AWS::RDS::DBCluster",
+      "Properties": {
+        "Engine": "aurora-postgresql",
+        "EngineMode": "serverless",
+        "EngineVersion": "11.10",
+        "DatabaseName": { "Fn::Select": [0, { "Fn::Split": ["-", { "Ref": "AWS::StackName" }] }] },
+        "MasterUsername": { "Ref": "DBUsername" },
+        "MasterUserPassword": { "Ref": "DBPassword" },
+        "ScalingConfiguration": {
+          "AutoPause": true,
+          "MaxCapacity": 4,
+          "MinCapacity": 2
+        },
+        "DBClusterIdentifier": { "Fn::Join": ["-", [{ "Ref": "AWS::StackName" }, "dbcluster"]] },
+        "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
+        "VpcSecurityGroupIds": [{ "Fn::GetAtt": ["AuroraSecurityGroup", "GroupId"] }]
+      }
+    },
+    "DBSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "Aurora subnet group",
+        "SubnetIds": { "Ref": "SubnetIds" }
+      }
+    },
+    "AuroraSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for Aurora",
+        "VpcId": { "Ref": "VpcId" },
+        "GroupName": { "Ref": "SecurityGroupName" }
+      }
+    }
+  },
+  "Outputs": {
+    "Endpoint": {
+      "Value": { "Fn::GetAtt": ["AuroraCluster", "Endpoint.Address"] },
+      "Description": "Endpoint of the Aurora cluster"
+    }
+  }
+}

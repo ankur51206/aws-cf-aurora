@@ -55,8 +55,17 @@
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Security group for Aurora",
-        "VpcId": { "Ref": "VpcId" },
-        "GroupName": { "Ref": "SecurityGroupName" }
+        "VpcId": { "Ref": "VpcId" }
+      }
+    },
+    "AuroraSecurityGroupIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": { "Fn::GetAtt": ["AuroraSecurityGroup", "GroupId"] },
+        "IpProtocol": "tcp",
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "CidrIp": "0.0.0.0/0"
       }
     }
   },
